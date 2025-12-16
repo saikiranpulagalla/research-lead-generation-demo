@@ -79,6 +79,10 @@ The Streamlit-based interface provides:
   - Download all profiles as Excel
   - Download filtered profiles as Excel
 
+## Design Choices
+
+**Single Research Focus Per Run:** The application enforces a single research focus per run to maintain intent clarity and ensure meaningful lead ranking. This design choice prevents dilution of scoring criteria and guarantees that all ranked profiles are directly comparable on domain-specific relevance metrics.
+
 ## Business Value
 
 This system enables Business Development teams to:
