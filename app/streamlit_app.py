@@ -269,7 +269,7 @@ def main():
             st.info(f"📄 {len(abstracts)} abstracts available for '{selected_keyword}'")
             
             # Process button
-            if st.button("🚀 Generate Ranked Leads", type="primary", width="stretch"):
+            if st.button("🚀 Generate Ranked Leads", type="primary"):
                 if not openai_key and not google_key:
                     st.error("❌ Please provide at least one API key")
                 else:
