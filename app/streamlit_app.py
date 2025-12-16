@@ -167,8 +167,7 @@ def create_profile_dataframe(profiles: List[Dict[str, Any]]) -> pd.DataFrame:
             "Title": profile.get("title", "N/A"),
             "Company": profile.get("affiliation", "N/A"),
             "Location": profile.get("location", "N/A"),
-            "Email": profile.get("email", "contact@research.org"),
-            "LinkedIn": profile.get("linkedin", "linkedin.com/in/researcher"),
+            "Email": profile.get("email", "N/A"),
             "Keywords": ", ".join(profile.get("keywords", []))
         }
         data.append(row)
@@ -378,6 +377,37 @@ def main():
                     width="stretch"
                 )
     
+    # Display original abstracts
+    st.divider()
+    st.header("📚 Original Research Abstracts")
+    
+    if st.session_state.selected_keyword:
+        sample_abstracts = load_sample_abstracts()
+        abstracts_list = sample_abstracts.get(st.session_state.selected_keyword, [])
+        
+        if abstracts_list:
+            st.write(f"**Total abstracts for '{st.session_state.selected_keyword}':** {len(abstracts_list)}")
+            
+            # Use expander for each abstract
+            for idx, abstract in enumerate(abstracts_list, 1):
+                with st.expander(f"📄 Abstract {idx}: {abstract.get('title', 'Untitled')}"):
+                    col1, col2 = st.columns([1, 1])
+                    
+                    with col1:
+                        st.write("**Year:**", abstract.get('year', 'N/A'))
+                        st.write("**Keywords:**", ", ".join(abstract.get('keywords', [])))
+                    
+                    with col2:
+                        st.write("**Authors:**")
+                        for author in abstract.get('authors', []):
+                            st.write(f"• **{author.get('name', 'Unknown')}** ({author.get('role', 'Researcher')})")
+                            st.write(f"  📧 {author.get('email', 'N/A')}")
+                            st.write(f"  🏢 {author.get('affiliation', 'Unknown')}")
+                            st.write(f"  📍 {author.get('location', 'Unknown')}")
+                    
+                    st.write("**Abstract:**")
+                    st.write(abstract.get('abstract', 'No abstract text available'))
+    
     # Footer
     st.divider()
     st.markdown("""
@@ -455,10 +485,9 @@ Year: {abstract_obj.get('year', 'Unknown')}
                         "title": author_data.get('role', 'Researcher'),
                         "affiliation": author_data.get('affiliation', 'Research Institute'),
                         "location": author_data.get('location', 'Unknown'),
-                        "email": author_data.get('email', f"{author_data.get('name', 'researcher').replace(' ', '.')}@research.org"),
+                        "email": author_data.get('email', 'N/A'),
                         "keywords": abstract_obj.get('keywords', []),
-                        "year": abstract_obj.get('year', 2024),
-                        "linkedin": f"linkedin.com/in/{author_data.get('name', 'researcher').lower().replace(' ', '-')}"
+                        "year": abstract_obj.get('year', 2024)
                     }
                     all_profiles.append(profile)
             
