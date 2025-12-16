@@ -1,552 +1,252 @@
-"""
-Lead Generation Streamlit Application
-AI-Powered Research Profile Extraction and Ranking
-"""
+# Lead Generation – Research Profile Extraction Demo
 
-import streamlit as st
-import os
-import json
-from pathlib import Path
-from dotenv import load_dotenv
-import pandas as pd
-import traceback
-from typing import List, Dict, Any
+## Project Overview
 
-from pipeline.model_selector import ModelSelector
-from pipeline.extractor import LLMExtractor
-from pipeline.excel_writer import ExcelWriter
-from pipeline.scoring import ProfileScorer
+This application demonstrates an AI-powered lead generation system designed to identify, enrich, and rank research profiles from scientific abstracts. Built as a demo for a lead-generation assignment, the system automates the discovery of qualified researchers based on domain-specific research topics.
 
-# Load environment variables
-load_dotenv()
+**Problem Statement:** Manually identifying relevant research professionals from scientific literature is time-consuming and inconsistent. This system uses natural language processing to extract structured researcher profiles and applies intelligent scoring to prioritize the most relevant contacts.
 
+**Business Context:** This demo mirrors a business development workflow for identifying and prioritizing researchers likely to adopt 3D in-vitro models for therapeutic development—enabling BD teams to rapidly identify high-intent scientific decision-makers.
 
-def initialize_session_state():
-    """Initialize Streamlit session state."""
-    if 'profiles' not in st.session_state:
-        st.session_state.profiles = []
-    if 'scored_profiles' not in st.session_state:
-        st.session_state.scored_profiles = []
-    if 'filtered_profiles' not in st.session_state:
-        st.session_state.filtered_profiles = []
-    if 'extraction_complete' not in st.session_state:
-        st.session_state.extraction_complete = False
-    if 'selected_keyword' not in st.session_state:
-        st.session_state.selected_keyword = None
+## System Workflow
 
+The application implements a three-stage pipeline:
 
-def load_sample_abstracts() -> Dict[str, List[Dict[str, Any]]]:
-    """Load sample abstracts from data folder."""
-    abstracts_path = Path(__file__).parent.parent / "data" / "sample_abstracts.json"
-    
-    if abstracts_path.exists():
-        with open(abstracts_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    
-    return {}
+### Stage 1: Identification
+- User selects a research focus area (e.g., Drug-Induced Liver Injury, 3D Cell Culture, Toxicology)
+- System loads pre-curated scientific abstracts matching the selected topic
+- Abstracts are prepared for information extraction
 
+### Stage 2: Enrichment
+- Large Language Models (LLM) analyze each abstract to extract structured researcher profiles
+- Extracted data includes: researcher name, title, affiliation, location, email, and research keywords
+- Fallback model ensures robustness if primary extraction fails
 
-def extract_author_profiles(abstract_text: str, model_selector: ModelSelector, temperature: float = 0.1) -> List[Dict[str, Any]]:
-    """
-    Extract structured author profiles from abstract text using LLM.
-    
-    Args:
-        abstract_text: Abstract text to extract from
-        model_selector: Model selector instance
-        temperature: Model temperature
-        
-    Returns:
-        List of extracted author profiles
-    """
-    extractor = LLMExtractor(model_selector, max_retries=2)
-    extracted_data = extractor.extract(abstract_text)
-    
-    # Transform extracted data to author profiles
-    profiles = []
-    
-    # The extracted data is typically nested; flatten it to get profiles
-    if isinstance(extracted_data, dict):
-        # Try to find author/personal information
-        for section_key, section_data in extracted_data.items():
-            if isinstance(section_data, dict):
-                # Check if this looks like profile data
-                if any(key in str(section_data).lower() for key in ["author", "name", "role", "affiliation"]):
-                    profile = _normalize_profile(section_data)
-                    if profile:
-                        profiles.append(profile)
-    
-    return profiles
+### Stage 3: Ranking
+- Each profile is scored using a weighted algorithm across four criteria:
+  - **Role/Seniority** (30 points): Professor, PI, Director roles rank higher
+  - **Publication Recency** (40 points): Recent publications indicate active research
+  - **Research Relevance** (20 points): Keyword alignment with selected topic
+  - **Geographic/Institutional Fit** (10 points): Location and affiliation considerations
+- Profiles are ranked by total score in descending order
+- Users can filter and export results
 
+## Data Source
 
-def _normalize_profile(data: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Normalize extracted data into a profile structure.
-    
-    Expected fields:
-    - author_name / name / first_name + last_name
-    - title / role
-    - affiliation / company
-    - location
-    - keywords
-    - year / publication_year
-    """
-    profile = {}
-    
-    # Flatten nested data if needed
-    flat_data = {}
-    for key, value in data.items():
-        if isinstance(value, dict):
-            flat_data.update(value)
-        else:
-            flat_data[key] = value
-    
-    # Map fields
-    for key, val in flat_data.items():
-        key_lower = key.lower()
-        
-        # Extract text from nested "text" objects
-        if isinstance(val, dict) and "text" in val:
-            val = val["text"]
-        
-        val_str = str(val).strip()
-        
-        if "name" in key_lower or "author" in key_lower:
-            if "author_name" not in profile:
-                profile["author_name"] = val_str
-        elif "title" in key_lower or "role" in key_lower or "position" in key_lower:
-            if "title" not in profile:
-                profile["title"] = val_str
-        elif "affiliation" in key_lower or "company" in key_lower or "organization" in key_lower:
-            if "affiliation" not in profile:
-                profile["affiliation"] = val_str
-        elif "location" in key_lower or "city" in key_lower or "address" in key_lower:
-            if "location" not in profile:
-                profile["location"] = val_str
-        elif "keyword" in key_lower or "research" in key_lower:
-            if "keywords" not in profile:
-                profile["keywords"] = [val_str] if isinstance(val_str, str) else val_str
-        elif "year" in key_lower or "publication" in key_lower or "date" in key_lower:
-            if "year" not in profile:
-                try:
-                    # Extract year if it contains more text
-                    import re
-                    year_match = re.search(r'\b(202\d|201\d)\b', val_str)
-                    if year_match:
-                        profile["year"] = int(year_match.group(1))
-                    else:
-                        profile["year"] = int(val_str)
-                except (ValueError, AttributeError):
-                    profile["year"] = 2024
-    
-    # Provide defaults
-    if "author_name" not in profile:
-        profile["author_name"] = "Unknown Author"
-    if "title" not in profile:
-        profile["title"] = "Researcher"
-    if "affiliation" not in profile:
-        profile["affiliation"] = "Research Institute"
-    if "location" not in profile:
-        profile["location"] = "Unknown Location"
-    if "keywords" not in profile:
-        profile["keywords"] = []
-    if "year" not in profile:
-        profile["year"] = 2024
-    
-    return profile
+The application uses **curated scientific abstracts** that mirror PubMed structure for demonstration purposes. The demo dataset includes 9 realistic research abstracts across 3 research domains.
+
+**Architecture Note:** The demo uses static PubMed-like data for reliability and reproducibility, but the pipeline is API-ready for live PubMed (NCBI E-utilities) integration without architectural changes. The modular design allows seamless transition from demo data to real-time sources.
+
+## Extraction Details
+
+The LLM extraction pipeline automatically identifies and structures the following information from each abstract:
+
+- **Researcher Name** – First and last name of corresponding authors
+- **Role/Title** – Position (e.g., Professor, Postdoctoral Researcher, Senior Scientist)
+- **Affiliation** – Institution or organization name
+- **Location** – City/country of the researcher's primary institution
+- **Email** – Contact email (when available in abstract metadata)
+- **Research Keywords** – Topic areas and methodologies mentioned
+- **Research Summary** – Concise description of the researcher's work
+
+## Scoring & Ranking Logic
+
+Profiles are ranked using a deterministic scoring algorithm (max 100 points):
+
+| Criterion | Points | Rationale |
+|-----------|--------|-----------|
+| Role Seniority | 30 | Senior researchers (PI, Professor, Director) signal decision-making authority |
+| Publication Recency | 40 | Active publication within last 5 years indicates current engagement |
+| Research Keywords | 20 | Direct keyword alignment with selected research focus |
+| Location/Institution | 10 | Geographic/institutional fit for partnership opportunity |
+
+**Scoring Rationale:** The combined score acts as a proxy for "propensity to engage"—prioritizing senior, actively publishing researchers working on relevant methodologies.
+
+## User Interface
+
+The Streamlit-based interface provides:
+
+- **Research Topic Selection** – Dropdown menu to choose research area
+- **Extract & Rank Button** – Initiates profile extraction and scoring
+- **Results Dashboard** – Displays total profiles extracted, average score, and top score
+- **Ranked Profiles Table** – Shows all profiles sorted by score with columns:
+  - Rank, Score, Name, Title, Company, Location, Email, LinkedIn, Keywords
+- **Filtering Options**:
+  - Filter by researcher name
+  - Filter by location
+  - Minimum score threshold
+- **Export Functionality**:
+  - Download all profiles as Excel
+  - Download filtered profiles as Excel
+
+## Design Choices
+
+**Single Research Focus Per Run:** The application enforces a single research focus per run to maintain intent clarity and ensure meaningful lead ranking. This design choice prevents dilution of scoring criteria and guarantees that all ranked profiles are directly comparable on domain-specific relevance metrics.
+
+## Business Value
+
+This system enables Business Development teams to:
+- **Identify** high-intent scientific decision-makers from research publications
+- **Prioritize** leads by seniority, activity, and research alignment
+- **Export** structured profiles for targeted outreach campaigns
+- **Scale** lead generation beyond manual literature review
+
+## Technology Stack
+
+| Component | Technology |
+|-----------|-----------|
+| **Frontend** | Streamlit (Python web framework) |
+| **LLM - Primary** | OpenAI GPT-4o |
+| **LLM - Fallback** | Google Gemini 2.5 Flash |
+| **Backend** | Python 3.11+ |
+| **Data Format** | JSON (abstracts), Excel (export) |
+| **Data Processing** | Pandas, openpyxl |
+| **API Integration** | LangChain |
+
+## Limitations & Future Enhancements
+
+### Current Limitations
+- **Static Demo Data**: Currently uses pre-curated abstracts; not real-time data
+- **Extraction Accuracy**: LLM performance depends on abstract quality and structure
+- **Limited to 2 LLM Providers**: OpenAI and Gemini only; others can be added
+
+### Planned Enhancements
+- **PubMed API Integration**: Real-time abstract fetching using NCBI E-utilities
+- **Advanced Lead Scoring**: Customizable weighting per research domain
+- **RAG Support**: Retrieve and rank based on full-text paper analysis
+- **Batch Processing**: Multi-keyword analysis and comparative ranking
+- **Database Integration**: Persist extracted profiles for duplicate detection and historical tracking
+
+## System Architecture (Lead Identification & Scoring Pipeline)
 
 
-def create_profile_dataframe(profiles: List[Dict[str, Any]]) -> pd.DataFrame:
-    """Convert profiles to displayable DataFrame."""
-    data = []
-    
-    for profile in profiles:
-        row = {
-            "Rank": profile.get("rank", "-"),
-            "Score": profile.get("probability_score", 0),
-            "Name": profile.get("author_name", "N/A"),
-            "Title": profile.get("title", "N/A"),
-            "Company": profile.get("affiliation", "N/A"),
-            "Location": profile.get("location", "N/A"),
-            "Email": profile.get("email", "N/A"),
-            "Keywords": ", ".join(profile.get("keywords", []))
-        }
-        data.append(row)
-    
-    return pd.DataFrame(data)
+```mermaid
+%%{init: {
+  "theme": "default",
+  "themeVariables": {
+    "primaryColor": "#E3F2FD",
+    "primaryTextColor": "#0D0D0D",
+    "secondaryColor": "#FFF3E0",
+    "secondaryTextColor": "#0D0D0D",
+    "tertiaryColor": "#E8F5E9",
+    "tertiaryTextColor": "#0D0D0D",
+    "lineColor": "#424242",
+    "fontSize": "14px"
+  }
+}}%%
 
+graph TB
+    User["👤 Business / Research Analyst"]
+    UI["🖥 Streamlit UI<br/>Research Topic Selection"]
+    Data["📄 Scientific Abstracts<br/>(Demo / PubMed-ready)"]
 
-def main():
-    """Main application function."""
-    
-    # Page configuration
-    st.set_page_config(
-        page_title="Lead Generation - Research Profile Extractor",
-        page_icon="🎯",
-        layout="wide",
-        initial_sidebar_state="expanded"
-    )
-    
-    initialize_session_state()
-    
-    # Header
-    st.title("🎯 Lead Generation - Research Profile Extractor")
-    st.markdown("""
-    Extract and rank research profiles from academic abstracts using AI.
-    **Demo for Lead Generation Assignment**: Identification → Enrichment → Ranking
-    """)
-    
-    # Sidebar - Configuration
-    with st.sidebar:
-        st.header("⚙️ Configuration")
-        
-        # API Keys
-        st.subheader("API Keys")
-        openai_key = st.text_input(
-            "OpenAI API Key",
-            value=os.getenv("OPENAI_API_KEY", ""),
-            type="password",
-            help="Primary extraction model"
-        )
-        
-        google_key = st.text_input(
-            "Google API Key",
-            value=os.getenv("GOOGLE_API_KEY", ""),
-            type="password",
-            help="Fallback extraction model"
-        )
-        
-        # Model Selection
-        st.subheader("Model Settings")
-        primary_model = st.selectbox(
-            "Primary Model (OpenAI)",
-            ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo"],
-            index=0
-        )
-        
-        fallback_model = st.selectbox(
-            "Fallback Model (Gemini)",
-            ["gemini-2.5-flash", "gemini-1.5-pro"],
-            index=0
-        )
-        
-        temperature = st.slider(
-            "Temperature",
-            min_value=0.0,
-            max_value=1.0,
-            value=0.1,
-            step=0.1,
-            help="Lower = more focused, Higher = more creative"
-        )
-        
-        # Validate API keys
-        st.divider()
-        if openai_key or google_key:
-            st.success("✅ At least one API key configured")
-        else:
-            st.error("❌ No API keys configured")
-            st.info("Set API keys in .env file or enter them above")
-    
-    # Main content area
-    col1, col2 = st.columns([1, 1])
-    
-    with col1:
-        st.header("� Select Research Focus")
-        
-        # Load sample abstracts
-        sample_abstracts = load_sample_abstracts()
-        keywords = list(sample_abstracts.keys())
-        
-        selected_keyword = st.selectbox(
-            "Choose Research Keyword",
-            keywords,
-            help="Select a research area to extract profiles"
-        )
-        
-        st.session_state.selected_keyword = selected_keyword
-        
-        if selected_keyword:
-            abstracts = sample_abstracts[selected_keyword]
-            st.info(f"📄 {len(abstracts)} abstracts available for '{selected_keyword}'")
-            
-            # Process button
-            if st.button("🚀 Generate Ranked Leads", type="primary", width="stretch"):
-                if not openai_key and not google_key:
-                    st.error("❌ Please provide at least one API key")
-                else:
-                    extract_and_rank_profiles(
-                        abstracts,
-                        openai_key,
-                        google_key,
-                        primary_model,
-                        fallback_model,
-                        temperature
-                    )
-    
-    with col2:
-        st.header("📊 Results Summary")
-        
-        if st.session_state.extraction_complete and st.session_state.scored_profiles:
-            total_profiles = len(st.session_state.scored_profiles)
-            avg_score = sum(p.get("probability_score", 0) for p in st.session_state.scored_profiles) / total_profiles if total_profiles > 0 else 0
-            top_score = st.session_state.scored_profiles[0].get("probability_score", 0) if st.session_state.scored_profiles else 0
-            
-            col_a, col_b, col_c = st.columns(3)
-            col_a.metric("Total Profiles", total_profiles)
-            col_b.metric("Average Score", f"{avg_score:.1f}")
-            col_c.metric("Top Score", f"{top_score}")
-            
-            st.success("✅ Extraction and ranking completed!")
-        else:
-            st.info("👆 Select a keyword and click 'Extract & Rank Profiles' to begin")
-    
-    st.divider()
-    
-    # Display filtered results
-    if st.session_state.extraction_complete and st.session_state.scored_profiles:
-        st.header("📋 Ranked Research Profiles")
-        
-        # Filtering section
-        col1, col2, col3 = st.columns([1, 1, 1])
-        
-        with col1:
-            search_name = st.text_input(
-                "🔍 Filter by Name",
-                placeholder="e.g., Chen, Wang"
-            )
-        
-        with col2:
-            search_location = st.text_input(
-                "📍 Filter by Location",
-                placeholder="e.g., Boston, Cambridge"
-            )
-        
-        with col3:
-            min_score = st.number_input(
-                "⭐ Minimum Score",
-                min_value=0,
-                max_value=100,
-                value=0,
-                step=5
-            )
-        
-        # Apply filters
-        filtered = st.session_state.scored_profiles
-        
-        if search_name:
-            filtered = [p for p in filtered if search_name.lower() in p.get("author_name", "").lower()]
-        
-        if search_location:
-            filtered = [p for p in filtered if search_location.lower() in p.get("location", "").lower()]
-        
-        if min_score > 0:
-            filtered = [p for p in filtered if p.get("probability_score", 0) >= min_score]
-        
-        st.session_state.filtered_profiles = filtered
-        
-        # Display table
-        if filtered:
-            df = create_profile_dataframe(filtered)
-            st.dataframe(df, width="stretch", hide_index=True)
-            
-            st.caption(f"Showing {len(filtered)} of {len(st.session_state.scored_profiles)} profiles")
-        else:
-            st.info("No profiles match the selected filters.")
-        
-        # Download button for filtered results
-        col1, col2 = st.columns([1, 1])
-        
-        with col1:
-            if st.session_state.scored_profiles:
-                excel_buffer = create_excel_export(st.session_state.scored_profiles)
-                st.download_button(
-                    label="📥 Download All Profiles (Excel)",
-                    data=excel_buffer,
-                    file_name=f"lead_generation_profiles_{st.session_state.selected_keyword.replace(' ', '_')}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    width="stretch"
-                )
-        
-        with col2:
-            if filtered and len(filtered) < len(st.session_state.scored_profiles):
-                excel_buffer = create_excel_export(filtered)
-                st.download_button(
-                    label="📥 Download Filtered Profiles (Excel)",
-                    data=excel_buffer,
-                    file_name=f"lead_generation_filtered_{st.session_state.selected_keyword.replace(' ', '_')}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    width="stretch"
-                )
-    
-    # Display original abstracts
-    st.divider()
-    st.header("📚 Original Research Abstracts")
-    
-    if st.session_state.selected_keyword:
-        sample_abstracts = load_sample_abstracts()
-        abstracts_list = sample_abstracts.get(st.session_state.selected_keyword, [])
-        
-        if abstracts_list:
-            st.write(f"**Total abstracts for '{st.session_state.selected_keyword}':** {len(abstracts_list)}")
-            
-            # Use expander for each abstract
-            for idx, abstract in enumerate(abstracts_list, 1):
-                with st.expander(f"📄 Abstract {idx}: {abstract.get('title', 'Untitled')}"):
-                    col1, col2 = st.columns([1, 1])
-                    
-                    with col1:
-                        st.write("**Year:**", abstract.get('year', 'N/A'))
-                        st.write("**Keywords:**", ", ".join(abstract.get('keywords', [])))
-                    
-                    with col2:
-                        st.write("**Authors:**")
-                        for author in abstract.get('authors', []):
-                            st.write(f"• **{author.get('name', 'Unknown')}** ({author.get('role', 'Researcher')})")
-                            st.write(f"  📧 {author.get('email', 'N/A')}")
-                            st.write(f"  🏢 {author.get('affiliation', 'Unknown')}")
-                            st.write(f"  📍 {author.get('location', 'Unknown')}")
-                    
-                    st.write("**Abstract:**")
-                    st.write(abstract.get('abstract', 'No abstract text available'))
-    
-    # Footer
-    st.divider()
-    st.markdown("""
-    <div style='text-align: center; color: #666;'>
-        <p><strong>Lead Generation System</strong> | AI-Powered Profile Extraction & Ranking</p>
-        <p style='font-size: 0.9em;'>Stage 1: Identification (Keywords) → Stage 2: Enrichment (LLM) → Stage 3: Ranking (Scoring)</p>
-    </div>
-    """, unsafe_allow_html=True)
+    Extract["🧠 Profile Identification & Enrichment<br/>(LLM Extraction)"]
+    Signals["📊 Signal Generator<br/>• Role / Seniority<br/>• Publication Recency<br/>• Keyword Relevance<br/>• Location / Institution"]
 
+    Score["⭐ Propensity Scoring Engine<br/>(0–100 Lead Score)"]
+    Rank["📈 Ranking & Filtering"]
+    Export["📤 Export Leads<br/>(Excel / CSV)"]
 
-def extract_and_rank_profiles(
-    abstracts: List[Dict[str, Any]],
-    openai_key: str,
-    google_key: str,
-    primary_model: str,
-    fallback_model: str,
-    temperature: float
-):
-    """
-    Extract and rank profiles from abstracts.
-    
-    Args:
-        abstracts: List of abstract objects with text and metadata
-        openai_key: OpenAI API key
-        google_key: Google API key
-        primary_model: Primary model name
-        fallback_model: Fallback model name
-        temperature: Model temperature
-    """
-    
-    progress_bar = st.progress(0)
-    status_text = st.empty()
-    
-    try:
-        all_profiles = []
-        
-        # Initialize model selector
-        status_text.text("🤖 Initializing AI models...")
-        progress_bar.progress(5)
-        
-        model_selector = ModelSelector(
-            openai_api_key=openai_key if openai_key else None,
-            google_api_key=google_key if google_key else None,
-            primary_model=primary_model,
-            fallback_model=fallback_model,
-            temperature=temperature
-        )
-        
-        # Process each abstract
-        total_abstracts = len(abstracts)
-        
-        for idx, abstract_obj in enumerate(abstracts):
-            progress = int(10 + (idx / total_abstracts) * 70)
-            status_text.text(f"🧠 Extracting profiles from abstracts... ({idx + 1}/{total_abstracts})")
-            progress_bar.progress(progress)
-            
-            try:
-                # Prepare abstract text
-                abstract_text = f"""
-Title: {abstract_obj.get('title', 'Unknown')}
+    User --> UI
+    UI --> Data
+    Data --> Extract
+    Extract --> Signals
+    Signals --> Score
+    Score --> Rank
+    Rank --> Export
+    Export --> User
 
-Authors: {', '.join([a.get('name', 'Unknown') for a in abstract_obj.get('authors', [])])}
+```
 
-Abstract:
-{abstract_obj.get('abstract', '')}
+## How to Run
 
-Keywords: {', '.join(abstract_obj.get('keywords', []))}
-Year: {abstract_obj.get('year', 'Unknown')}
-"""
-                
-                # Create author profiles from abstract metadata
-                for author_data in abstract_obj.get('authors', []):
-                    profile = {
-                        "author_name": author_data.get('name', 'Unknown'),
-                        "title": author_data.get('role', 'Researcher'),
-                        "affiliation": author_data.get('affiliation', 'Research Institute'),
-                        "location": author_data.get('location', 'Unknown'),
-                        "email": author_data.get('email', 'N/A'),
-                        "keywords": abstract_obj.get('keywords', []),
-                        "year": abstract_obj.get('year', 2024)
-                    }
-                    all_profiles.append(profile)
-            
-            except Exception as e:
-                st.warning(f"⚠️ Error processing abstract {idx + 1}: {str(e)}")
-                continue
-        
-        st.session_state.profiles = all_profiles
-        
-        # Score profiles
-        status_text.text("⭐ Scoring and ranking profiles...")
-        progress_bar.progress(85)
-        
-        scorer = ProfileScorer()
-        scored_profiles = scorer.score_profiles(all_profiles)
-        
-        st.session_state.scored_profiles = scored_profiles
-        
-        # Complete
-        progress_bar.progress(100)
-        status_text.text("✅ Extraction and ranking complete!")
-        st.session_state.extraction_complete = True
-        
-        # Clear progress indicators
-        import time
-        time.sleep(1)
-        progress_bar.empty()
-        status_text.empty()
-        
-        st.rerun()
-        
-    except Exception as e:
-        st.error(f"❌ Extraction failed: {str(e)}")
-        st.error("**Detailed Error:**")
-        st.code(traceback.format_exc())
-        progress_bar.empty()
-        status_text.empty()
+### Prerequisites
+- Python 3.11 or higher
+- `uv` package manager ([install uv](https://docs.astral.sh/uv/))
+- API keys for OpenAI and/or Google (set in `.env` file)
 
+### Quick Start with `uv`
 
-def create_excel_export(profiles: List[Dict[str, Any]]) -> bytes:
-    """
-    Create Excel export of profiles.
-    
-    Args:
-        profiles: List of profiles to export
-        
-    Returns:
-        Excel file bytes
-    """
-    excel_writer = ExcelWriter()
-    
-    # Convert profiles to format expected by excel_writer
-    data_dict = {
-        "Lead Generation Profiles": profiles
-    }
-    
-    excel_buffer = excel_writer.json_to_excel(data_dict)
-    return excel_buffer.getvalue()
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/saikiranpulagalla/research-lead-generation-demo.git
+   cd research-lead-generation-demo
+   ```
 
+2. **Create virtual environment with uv**
+   ```bash
+   uv venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   ```
 
-if __name__ == "__main__":
-    main()
+3. **Install dependencies with uv**
+   ```bash
+   uv sync
+   ```
+
+4. **Set up API keys**
+   Create a `.env` file in the project root:
+   ```env
+   OPENAI_API_KEY=your_openai_api_key_here
+   GOOGLE_API_KEY=your_google_api_key_here
+   ```
+
+### Alternative: Traditional pip Setup
+
+If you prefer traditional Python setup:
+
+   ```bash
+   git clone https://github.com/saikiranpulagalla/research-lead-generation-demo.git
+   cd research-lead-generation-demo
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+
+### Running the Application
+
+Start the Streamlit application:
+```bash
+streamlit run app/streamlit_app.py
+```
+
+The app will open at `http://localhost:8501`
+
+## Project Structure
+
+### Essential Files Only
+
+```
+research-lead-generation-demo/
+├── app/
+│   ├── streamlit_app.py              # Main Streamlit UI
+│   └── pipeline/
+│       ├── model_selector.py         # LLM model selection logic
+│       ├── extractor.py              # LLM extraction engine
+│       ├── scoring.py                # Profile scoring algorithm
+│       └── excel_writer.py           # Excel export handler
+├── data/
+│   └── sample_abstracts.json         # Demo dataset (9 abstracts, 3 keywords)
+├── .env.example                      # Example environment variables
+├── prompts/
+│   └── extraction_prompt.txt         # LLM extraction instructions
+├── pyproject.toml                    # Project metadata & dependencies (uv)
+├── requirements.txt                  # Python dependencies (pip)
+└── README.md                         # This file
+```
+
+**Note:** Non-essential files (test configs, legacy modules, pycache) are removed for a clean, production-ready structure.
+
+## Notes
+
+- The application gracefully handles LLM failures by falling back to a secondary model
+- All extracted data is processed locally; no profiles are stored without explicit export
+- Scoring algorithm is reproducible and deterministic for consistent ranking
+
+## Compliance Note
+
+This demo uses publicly available or synthetic data and does not scrape private platforms such as LinkedIn or ResearchGate.
+
+---
+
+**Status:** Demo Application | Lead Generation Assignment | v1.0
