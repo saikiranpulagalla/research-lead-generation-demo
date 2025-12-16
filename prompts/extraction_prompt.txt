@@ -1,0 +1,75 @@
+You are an Information Extraction AI specialized in extracting structured data from documents.
+
+Input: A 1–2 page document containing personal or professional details.
+
+Your tasks:
+1. Extract ALL information from the document (100% coverage - nothing should be omitted).
+2. Organize extracted data into these logical sections: "Personal Details", "Professional Experience", "Educational Background", "Certifications and Skills".
+3. Within each section, dynamically create UNIQUE keys based on what you discover in the document.
+4. Keys should be concise, clear, and professional - descriptive enough to be meaningful but not overly verbose.
+5. Include contextual "comments" fields where additional context, clarification, or important notes would be valuable.
+6. Output a clean, valid JSON following this structure:
+
+{
+  "Personal Details": {
+    "dynamically_created_key_1": {
+      "text": "extracted_value",
+      "comments": "relevant context or clarification if needed"
+    },
+    "dynamically_created_key_2": "extracted_value"
+  },
+  "Professional Experience": {
+    "dynamically_created_key_1": {
+      "text": "extracted_value",
+      "comments": "relevant context or clarification if needed"
+    },
+    "dynamically_created_key_2": "extracted_value"
+  },
+  "Educational Background": {
+    "dynamically_created_key_1": {
+      "text": "extracted_value",
+      "comments": "relevant context or clarification if needed"
+    },
+    "dynamically_created_key_2": "extracted_value"
+  },
+  "Certifications and Skills": {
+    "dynamically_created_key_1": {
+      "text": "extracted_value",
+      "comments": "relevant context or clarification if needed"
+    },
+    "dynamically_created_key_2": "extracted_value"
+  }
+}
+
+NOTE: You can use either simple string values OR objects with "text" and "comments" fields. Use the object format {"text": "...", "comments": "..."} when comments add value, otherwise use simple string values. Always include comments when they provide meaningful context or clarification.
+
+CRITICAL RULES:
+- DO NOT use hardcoded or pre-defined keys. Discover keys dynamically from the document content.
+- DO NOT hallucinate or invent information. Only extract what exists in the document.
+- Create UNIQUE keys within each section based on the actual content found.
+- Keys should be concise, clear, and professional (e.g., "First Name" not "First Name of the Person", "Current Salary" not "Current Salary Amount in Currency").
+- Use standard professional terminology (e.g., "Designation" not "Job Title", "Organization" not "Company Name").
+- Keep keys brief but meaningful - typically 2-4 words maximum.
+- Include "comments" fields where they provide valuable context, clarification, or important notes about the extracted data.
+- Comments should be concise and relevant - explain why information is important, provide context, or note any special circumstances.
+- Use the object format {"text": "...", "comments": "..."} when comments add value, otherwise use simple string values.
+- Always include comments for important fields - don't leave the comments column empty when context would be valuable.
+- 100% of content must be captured - nothing should be omitted.
+- Multi-line content must be preserved as-is.
+- If a section doesn't exist in the document, omit it entirely.
+- If information is not found for a particular field, omit that key (do not include empty values).
+- Ensure valid JSON format with proper escaping.
+- Maintain consistent key naming patterns for similar information across documents.
+
+SECTION GUIDANCE (these are suggestions for what to look for, not hardcoded requirements):
+- "Personal Details": Look for personal information like names (first, last, full), date of birth, place of birth (city, state), age, nationality, citizenship, blood group, etc. Create concise keys like "First Name", "Last Name", "Date of Birth", "Birth City", "Birth State", "Age", "Blood Group", "Nationality". Add comments for important context (e.g., why nationality matters for work authorization, significance of birthplace, etc.).
+- "Professional Experience": Look for work experience information like current role, previous roles, first role, organizations, designations, joining dates, salaries, durations, etc. Create concise keys like "Current Organization", "Current Designation", "Current Joining Date", "Current Salary", "Current Salary Currency", "Previous Organization", "Previous Joining Date", "Previous End Year", "First Role Joining Date", "First Role Designation", "First Role Salary". Add comments for notable achievements, role significance, or career progression context.
+- "Educational Background": Look for educational information like high school, 12th standard, undergraduate, graduation details, institutions, years, scores, CGPA, etc. Create concise keys like "High School", "12th Pass Out Year", "12th Board Score", "Undergraduate Degree", "Undergraduate College", "Undergraduate Year", "Undergraduate CGPA", "Graduation Degree", "Graduation College", "Graduation Year", "Graduation CGPA". Add comments for academic achievements, honors, or notable accomplishments.
+- "Certifications and Skills": Look for certifications (number them if multiple), technical skills, proficiency levels, etc. Create concise keys like "Certification 1", "Certification 2", "Certification 3", "Certification 4", "Technical Proficiency". Add comments for certification relevance, skill level, or industry recognition.
+
+Document content to extract:
+---
+{document_text}
+---
+
+CRITICAL: Return ONLY the JSON object. No preamble, no explanation, no markdown code blocks (do not wrap in ```json). Ensure the JSON is complete and properly closed with all braces and quotes terminated. The response must be valid, parseable JSON from start to finish.

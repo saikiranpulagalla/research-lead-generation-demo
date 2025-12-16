@@ -1,0 +1,32 @@
+# Core LangChain
+langchain==0.3.12
+langchain-core==0.3.28
+langchain-openai==0.2.14
+langchain-google-genai==2.0.8
+
+# LLM Providers
+openai==1.59.5
+google-generativeai==0.8.3
+
+# PDF Processing
+pdfplumber==0.11.4
+PyMuPDF==1.24.14
+
+# Data Processing
+pandas==2.2.3
+openpyxl==3.1.5
+pydantic==2.10.3
+pydantic-settings==2.6.1
+
+# Web Framework
+streamlit==1.41.1
+
+# Environment Management
+python-dotenv==1.0.1
+
+# JSON Validation
+jsonschema==4.23.0
+
+# Utilities
+tenacity==9.0.0
+typing-extensions==4.12.2

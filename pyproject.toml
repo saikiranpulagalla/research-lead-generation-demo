@@ -1,0 +1,80 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "research-lead-generation-demo"
+version = "1.0.0"
+description = "AI-powered lead generation system for extracting and ranking research profiles from scientific abstracts"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    {name = "Saiki Ran Pulagalla", email = "saikiranpulagalla@example.com"}
+]
+license = {text = "MIT"}
+keywords = ["lead-generation", "ai", "nlp", "research-profiles", "streamlit", "langchain"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "langchain==0.3.12",
+    "langchain-core==0.3.28",
+    "langchain-openai==0.2.14",
+    "langchain-google-genai==2.0.8",
+    "openai==1.59.5",
+    "google-generativeai==0.8.3",
+    "pdfplumber==0.11.4",
+    "PyMuPDF==1.24.14",
+    "pandas==2.2.3",
+    "openpyxl==3.1.5",
+    "pydantic==2.10.3",
+    "pydantic-settings==2.6.1",
+    "streamlit==1.41.1",
+    "python-dotenv==1.0.1",
+    "jsonschema==4.23.0",
+    "tenacity==9.0.0",
+    "typing-extensions==4.12.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==7.4.4",
+    "pytest-cov==4.1.0",
+    "black==23.12.1",
+    "ruff==0.1.11",
+    "mypy==1.7.1",
+]
+test = [
+    "pytest==7.4.4",
+    "pytest-cov==4.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/saikiranpulagalla/research-lead-generation-demo"
+Repository = "https://github.com/saikiranpulagalla/research-lead-generation-demo.git"
+Issues = "https://github.com/saikiranpulagalla/research-lead-generation-demo/issues"
+
+[tool.hatch.version]
+path = "app/__init__.py"
+
+[tool.black]
+line-length = 100
+target-version = ["py311", "py312", "py313"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false

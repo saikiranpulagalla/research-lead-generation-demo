@@ -1,0 +1,164 @@
+{
+  "Drug-Induced Liver Injury": [
+    {
+      "title": "Hepatotoxicity Assessment of Novel Therapeutics Using Advanced 3D Hepatic Models",
+      "authors": [
+        {
+          "name": "Dr. Sarah Chen",
+          "affiliation": "Toxicology Research Center, Boston Medical College",
+          "role": "Principal Investigator, Hepatic Toxicology",
+          "location": "Boston, MA",
+          "email": "s.chen@bostonmedical.edu"
+        }
+      ],
+      "year": 2024,
+      "keywords": ["Drug-Induced Liver Injury", "Hepatotoxicity", "3D cell culture", "Safety Assessment"],
+      "abstract": "This study evaluates hepatotoxicity using advanced 3D hepatic cell models for early-stage drug screening. We present a novel framework for predicting drug-induced liver injury (DILI) in preclinical development, utilizing engineered tissue models that better recapitulate in vivo hepatic responses. Our methodology demonstrates 95% accuracy in identifying hepatotoxic compounds compared to traditional 2D models, offering a paradigm shift in safety assessment protocols."
+    },
+    {
+      "title": "Multi-Omics Integration for Hepatic Safety Prediction",
+      "authors": [
+        {
+          "name": "Prof. James Mitchell",
+          "affiliation": "Cambridge Institute of Pharmaceutical Sciences",
+          "role": "Senior Research Fellow, Safety Pharmacology",
+          "location": "Cambridge, UK",
+          "email": "j.mitchell@cambridge-pharma.org"
+        },
+        {
+          "name": "Dr. Elena Rodriguez",
+          "affiliation": "Cambridge Institute of Pharmaceutical Sciences",
+          "role": "Postdoctoral Researcher",
+          "location": "Cambridge, UK",
+          "email": "e.rodriguez@cambridge-pharma.org"
+        }
+      ],
+      "year": 2023,
+      "keywords": ["Hepatotoxicity", "Drug-Induced Liver Injury", "Omics", "Predictive Toxicology"],
+      "abstract": "We present a comprehensive multi-omics approach to identify biomarkers predictive of drug-induced hepatotoxicity. By integrating genomics, proteomics, and metabolomics data from human hepatocytes exposed to known hepatotoxins, we identified novel signatures of DILI risk. This work facilitates early identification of unsafe compounds and supports de-risking of drug development programs."
+    },
+    {
+      "title": "Regulatory Framework for DILI Risk Assessment in Drug Development",
+      "authors": [
+        {
+          "name": "Dr. Michael Zhang",
+          "affiliation": "BioPharma Safety Solutions, Bay Area",
+          "role": "Director, Hepatic Safety",
+          "location": "San Francisco, CA",
+          "email": "m.zhang@biopharma-safety.com"
+        }
+      ],
+      "year": 2024,
+      "keywords": ["Drug-Induced Liver Injury", "Regulatory Strategy", "Safety Assessment"],
+      "abstract": "Drug-induced liver injury remains a leading cause of drug attrition and post-marketing withdrawals. This paper reviews current regulatory expectations for hepatic safety assessment and proposes a tiered approach for DILI risk characterization using a combination of in vitro and in vivo methods."
+    }
+  ],
+  "3D cell culture": [
+    {
+      "title": "Engineered Tissues for Disease Modeling: Advances in 3D Culture Systems",
+      "authors": [
+        {
+          "name": "Dr. Lisa Wang",
+          "affiliation": "3D Biotech Institute, Cambridge",
+          "role": "Principal Investigator, Tissue Engineering",
+          "location": "Cambridge, MA",
+          "email": "l.wang@3dbiotech.org"
+        }
+      ],
+      "year": 2024,
+      "keywords": ["3D cell culture", "Tissue Engineering", "Disease Modeling", "Bioprinting"],
+      "abstract": "Recent advances in 3D culture technologies have revolutionized disease modeling and drug screening. This review synthesizes current approaches in scaffold-free and scaffold-based 3D culture systems, highlighting their applications in personalized medicine and therapeutic development. Our analysis shows superior cellular behavior recapitulation in 3D compared to traditional monolayer cultures."
+    },
+    {
+      "title": "Biomaterial Selection for Optimized 3D Cellular Microenvironments",
+      "authors": [
+        {
+          "name": "Prof. Hans Mueller",
+          "affiliation": "Biomedical Engineering Department, Swiss Institute of Technology",
+          "role": "Director, Biomaterials Lab",
+          "location": "Basel, Switzerland",
+          "email": "h.mueller@swiss-biotech.ch"
+        },
+        {
+          "name": "Dr. Sophia Rossi",
+          "affiliation": "Biomedical Engineering Department, Swiss Institute of Technology",
+          "role": "Research Scientist",
+          "location": "Basel, Switzerland",
+          "email": "s.rossi@swiss-biotech.ch"
+        }
+      ],
+      "year": 2023,
+      "keywords": ["3D cell culture", "Biomaterials", "ECM mimicry", "Cell Behavior"],
+      "abstract": "The selection of appropriate biomaterials is critical for creating 3D cell culture systems that accurately model physiological conditions. We evaluated 12 distinct biomaterial platforms for their capacity to support long-term culture while maintaining cellular functionality and gene expression patterns comparable to in vivo tissues."
+    },
+    {
+      "title": "High-Throughput Screening in 3D: Scaling Culture Systems for Drug Discovery",
+      "authors": [
+        {
+          "name": "Dr. Carlos Gonzalez",
+          "affiliation": "Drug Discovery Platform, Bay Area Biotech",
+          "role": "Lead Scientist, Assay Development",
+          "location": "Palo Alto, CA",
+          "email": "c.gonzalez@baybiotech.com"
+        }
+      ],
+      "year": 2024,
+      "keywords": ["3D cell culture", "Drug Screening", "High-Throughput", "Automation"],
+      "abstract": "Scaling 3D culture systems for high-throughput drug screening presents significant technical challenges. We describe an automated platform for maintaining and assaying 384-well plates of spheroid cultures, enabling rapid evaluation of thousands of compounds with improved predictivity compared to 2D screening approaches."
+    }
+  ],
+  "Toxicology": [
+    {
+      "title": "Integrative Toxicology Assessment Using Alternative Methods",
+      "authors": [
+        {
+          "name": "Dr. Robert Kim",
+          "affiliation": "Toxicology Research Institute, Boston",
+          "role": "Senior Toxicologist, Regulatory Affairs",
+          "location": "Boston, MA",
+          "email": "r.kim@tox-research.edu"
+        }
+      ],
+      "year": 2023,
+      "keywords": ["Toxicology", "Safety Assessment", "In Vitro Models", "Regulatory"],
+      "abstract": "This paper presents an integrated framework for toxicological assessment combining multiple alternative methods including genomics, proteomics, and 3D cellular models. The approach reduces reliance on animal testing while maintaining robust predictivity for human health hazards."
+    },
+    {
+      "title": "Mechanistic Toxicology: Systems-Based Approach to Safety",
+      "authors": [
+        {
+          "name": "Prof. Anna Bergstrom",
+          "affiliation": "Karolinska Institute, Toxicology Center",
+          "role": "Professor, Systems Toxicology",
+          "location": "Stockholm, Sweden",
+          "email": "a.bergstrom@ki.se"
+        },
+        {
+          "name": "Dr. Otto Lundgren",
+          "affiliation": "Karolinska Institute, Toxicology Center",
+          "role": "Postdoctoral Researcher",
+          "location": "Stockholm, Sweden",
+          "email": "o.lundgren@ki.se"
+        }
+      ],
+      "year": 2024,
+      "keywords": ["Toxicology", "Mechanistic Understanding", "Safety", "Systems Biology"],
+      "abstract": "Understanding the mechanisms of toxicity is essential for predicting and preventing adverse effects. We propose a systems-based approach that integrates toxicodynamics with pharmacokinetics to predict safety margins across diverse molecular targets and tissues."
+    },
+    {
+      "title": "Computational Toxicology for Pharmaceutical Development",
+      "authors": [
+        {
+          "name": "Dr. Jennifer Smith",
+          "affiliation": "Computational Safety Sciences, Bay Area",
+          "role": "Senior Computational Toxicologist",
+          "location": "Berkeley, CA",
+          "email": "j.smith@comp-safety.com"
+        }
+      ],
+      "year": 2024,
+      "keywords": ["Toxicology", "Computational Methods", "Prediction", "Drug Development"],
+      "abstract": "Computational methods enable rapid screening of chemical libraries for potential toxicity liabilities early in drug development. Our machine learning models, trained on comprehensive toxicological datasets, achieve 92% accuracy in predicting hepatotoxicity, nephrotoxicity, and off-target effects."
+    }
+  ]
+}
