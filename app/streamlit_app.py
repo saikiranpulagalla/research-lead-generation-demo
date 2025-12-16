@@ -346,7 +346,7 @@ def main():
         # Display table
         if filtered:
             df = create_profile_dataframe(filtered)
-            st.dataframe(df, width="stretch", hide_index=True)
+            st.dataframe(df, use_container_width=True, hide_index=True)
             
             st.caption(f"Showing {len(filtered)} of {len(st.session_state.scored_profiles)} profiles")
         else:
@@ -363,7 +363,7 @@ def main():
                     data=excel_buffer,
                     file_name=f"lead_generation_profiles_{st.session_state.selected_keyword.replace(' ', '_')}.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    width="stretch"
+                    use_container_width=True
                 )
         
         with col2:
@@ -374,7 +374,7 @@ def main():
                     data=excel_buffer,
                     file_name=f"lead_generation_filtered_{st.session_state.selected_keyword.replace(' ', '_')}.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    width="stretch"
+                    use_container_width=True
                 )
     
     # Display original abstracts
