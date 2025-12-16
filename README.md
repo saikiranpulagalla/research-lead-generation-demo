@@ -6,6 +6,8 @@ This application demonstrates an AI-powered lead generation system designed to i
 
 **Problem Statement:** Manually identifying relevant research professionals from scientific literature is time-consuming and inconsistent. This system uses natural language processing to extract structured researcher profiles and applies intelligent scoring to prioritize the most relevant contacts.
 
+**Business Context:** This demo mirrors a business development workflow for identifying and prioritizing researchers likely to adopt 3D in-vitro models for therapeutic development—enabling BD teams to rapidly identify high-intent scientific decision-makers.
+
 ## System Workflow
 
 The application implements a three-stage pipeline:
@@ -33,7 +35,7 @@ The application implements a three-stage pipeline:
 
 The application uses **curated scientific abstracts** that mirror PubMed structure for demonstration purposes. The demo dataset includes 9 realistic research abstracts across 3 research domains.
 
-**Architecture Note:** The system is designed with data abstraction in mind. Live PubMed (NCBI E-utilities) integration can be added without modifying core extraction, scoring, or ranking logic. The modular architecture allows seamless transition from static demo data to real-time PubMed queries.
+**Architecture Note:** The demo uses static PubMed-like data for reliability and reproducibility, but the pipeline is API-ready for live PubMed (NCBI E-utilities) integration without architectural changes. The modular design allows seamless transition from demo data to real-time sources.
 
 ## Extraction Details
 
@@ -53,12 +55,12 @@ Profiles are ranked using a deterministic scoring algorithm (max 100 points):
 
 | Criterion | Points | Rationale |
 |-----------|--------|-----------|
-| Role Seniority | 30 | Senior researchers (PI, Professor, Director) have higher lead quality |
+| Role Seniority | 30 | Senior researchers (PI, Professor, Director) signal decision-making authority |
 | Publication Recency | 40 | Active publication within last 5 years indicates current engagement |
 | Research Keywords | 20 | Direct keyword alignment with selected research focus |
-| Location/Institution | 10 | Bonus for institutional prestige or target geographic location |
+| Location/Institution | 10 | Geographic/institutional fit for partnership opportunity |
 
-Scores are calculated deterministically for consistency and used to rank all profiles. This allows users to prioritize outreach based on researcher quality metrics.
+**Scoring Rationale:** The combined score acts as a proxy for "propensity to engage"—prioritizing senior, actively publishing researchers working on relevant methodologies.
 
 ## User Interface
 
@@ -76,6 +78,14 @@ The Streamlit-based interface provides:
 - **Export Functionality**:
   - Download all profiles as Excel
   - Download filtered profiles as Excel
+
+## Business Value
+
+This system enables Business Development teams to:
+- **Identify** high-intent scientific decision-makers from research publications
+- **Prioritize** leads by seniority, activity, and research alignment
+- **Export** structured profiles for targeted outreach campaigns
+- **Scale** lead generation beyond manual literature review
 
 ## Technology Stack
 
@@ -103,46 +113,45 @@ The Streamlit-based interface provides:
 - **Batch Processing**: Multi-keyword analysis and comparative ranking
 - **Database Integration**: Persist extracted profiles for duplicate detection and historical tracking
 
-## System Architecture
+## System Architecture (Lead Identification & Scoring Pipeline)
+
 
 ```mermaid
-graph TB
-    User["👤 User Interface<br/>(Streamlit UI)"]
-    Keyword["🔍 Keyword Selection<br/>(Research Topic)"]
-    DataLoader["📂 Data Loader<br/>(sample_abstracts.json)"]
-    LLM{"🤖 LLM Pipeline"}
-    OpenAI["OpenAI GPT-4o<br/>(Primary)"]
-    Gemini["Google Gemini<br/>(Fallback)"]
-    Extractor["📝 LLM Extractor<br/>(profile extraction)"]
-    Scorer["⭐ Profile Scorer<br/>(4 weighted criteria)"]
-    Filter["🔎 Filter & Sort<br/>(name, location, score)"]
-    Excel["📊 Excel Export<br/>(openpyxl)"]
-    Output["💾 Download Results<br/>(Excel file)"]
-    
-    User --> Keyword
-    Keyword --> DataLoader
-    DataLoader --> Extractor
-    Extractor --> LLM
-    LLM -->|Success| OpenAI
-    LLM -->|Fallback| Gemini
-    OpenAI --> Scorer
-    Gemini --> Scorer
-    Scorer --> Filter
-    Filter --> Excel
-    Excel --> Output
-    Output --> User
+%%{init: {
+  "theme": "default",
+  "themeVariables": {
+    "primaryColor": "#E3F2FD",
+    "primaryTextColor": "#0D0D0D",
+    "secondaryColor": "#FFF3E0",
+    "secondaryTextColor": "#0D0D0D",
+    "tertiaryColor": "#E8F5E9",
+    "tertiaryTextColor": "#0D0D0D",
+    "lineColor": "#424242",
+    "fontSize": "14px"
+  }
+}}%%
 
-    style User fill:#e1f5ff
-    style Keyword fill:#fff3e0
-    style DataLoader fill:#f3e5f5
-    style LLM fill:#fce4ec
-    style OpenAI fill:#e8f5e9
-    style Gemini fill:#e8f5e9
-    style Extractor fill:#f1f8e9
-    style Scorer fill:#ffe0b2
-    style Filter fill:#f0f4c3
-    style Excel fill:#c8e6c9
-    style Output fill:#b3e5fc
+graph TB
+    User["👤 Business / Research Analyst"]
+    UI["🖥 Streamlit UI<br/>Research Topic Selection"]
+    Data["📄 Scientific Abstracts<br/>(Demo / PubMed-ready)"]
+
+    Extract["🧠 Profile Identification & Enrichment<br/>(LLM Extraction)"]
+    Signals["📊 Signal Generator<br/>• Role / Seniority<br/>• Publication Recency<br/>• Keyword Relevance<br/>• Location / Institution"]
+
+    Score["⭐ Propensity Scoring Engine<br/>(0–100 Lead Score)"]
+    Rank["📈 Ranking & Filtering"]
+    Export["📤 Export Leads<br/>(Excel / CSV)"]
+
+    User --> UI
+    UI --> Data
+    Data --> Extract
+    Extract --> Signals
+    Signals --> Score
+    Score --> Rank
+    Rank --> Export
+    Export --> User
+
 ```
 
 ## How to Run
@@ -199,13 +208,6 @@ streamlit run app/streamlit_app.py
 
 The app will open at `http://localhost:8501`
 
-### Running Tests
-
-Execute the test suite:
-```bash
-pytest tests/ -v
-```
-
 ## Project Structure
 
 ### Essential Files Only
@@ -222,6 +224,8 @@ research-lead-generation-demo/
 ├── data/
 │   └── sample_abstracts.json         # Demo dataset (9 abstracts, 3 keywords)
 ├── .env.example                      # Example environment variables
+├── prompts/
+│   └── extraction_prompt.txt         # LLM extraction instructions
 ├── pyproject.toml                    # Project metadata & dependencies (uv)
 ├── requirements.txt                  # Python dependencies (pip)
 └── README.md                         # This file
@@ -235,6 +239,11 @@ research-lead-generation-demo/
 - All extracted data is processed locally; no profiles are stored without explicit export
 - Scoring algorithm is reproducible and deterministic for consistent ranking
 
+## Compliance Note
+
+This demo uses publicly available or synthetic data and does not scrape private platforms such as LinkedIn or ResearchGate.
+
 ---
 
 **Status:** Demo Application | Lead Generation Assignment | v1.0
+
