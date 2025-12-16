@@ -22,7 +22,6 @@ from tenacity import (
 )
 
 from .model_selector import ModelSelector
-from .schema import validate_json_structure, ValidationResult
 
 
 class LLMExtractor:
@@ -174,13 +173,11 @@ class LLMExtractor:
         # Parse JSON
         parsed_data = self._parse_json(content)
 
-        # Validate structure
-        validation = validate_json_structure(parsed_data)
+        # Basic validation - ensure it's a dict
+        if not isinstance(parsed_data, dict):
+            raise Exception(f"Expected JSON object, got {type(parsed_data).__name__}")
 
-        if not validation.is_valid:
-            raise Exception(f"Validation failed: {', '.join(validation.errors)}")
-
-        return validation.data
+        return parsed_data
     
     def _parse_json(self, content: str) -> Dict[str, Any]:
         """
@@ -297,25 +294,21 @@ class LLMExtractor:
                           f"Response length: {len(content)}, "
                           f"Response snippet: {snippet!r}")
     
-    def extract_with_validation(self, text: str) -> tuple[Dict[str, Any], ValidationResult]:
+    def extract_with_validation(self, text: str) -> tuple[Dict[str, Any], Dict[str, Any]]:
         """
-        Extract and return both data and validation result.
+        Extract and return both data and validation status.
         
         Args:
             text: Input text
             
         Returns:
-            Tuple of (extracted_data, validation_result)
+            Tuple of (extracted_data, validation_status)
         """
         try:
             data = self.extract(text)
-            validation = validate_json_structure(data)
-            return data, validation
+            return data, {"is_valid": True, "errors": []}
         except Exception as e:
-            return {}, ValidationResult(
-                is_valid=False,
-                errors=[str(e)]
-            )
+            return {}, {"is_valid": False, "errors": [str(e)]}
     
     def get_current_model_info(self) -> Dict[str, str]:
         """Get information about currently active model."""
